@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "src/components/**/*",
+    "src/hooks/**/*",
+    "src/services/**/*",
+    "src/types/**/*",
+    "src/utils/**/*",
+    "src/config/**/*",
+    "src/*.ts",
+    "src/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".vercel",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.test.tsx",
+    "**/*.d.ts",
+    "vite.config.ts"
+  ]
+} 

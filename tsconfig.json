@@ -21,23 +21,32 @@
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
+    "baseUrl": "src",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./*"]
     }
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.js",
-    "src/**/*.jsx",
+    "src/components/**/*",
+    "src/hooks/**/*",
+    "src/services/**/*",
+    "src/types/**/*",
+    "src/utils/**/*",
+    "src/config/**/*",
+    "src/*.ts",
+    "src/*.tsx",
     "vite.config.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "api",
-    "**/api/**/*",
+    "build",
+    "coverage",
+    ".vercel",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.test.tsx",
     "**/*.d.ts"
   ]
 }
