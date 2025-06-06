@@ -1,46 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Eye, Trash2 } from 'lucide-react';
+import { Calendar, Eye, Trash2, ArrowLeft } from 'lucide-react';
 import { useReportData } from '../hooks/useReportData';
 import Button from './Button';
 import Card from './Card';
 import ReportDisplay from './ReportDisplay';
 import toast from 'react-hot-toast';
-import { endpoints } from '../config/api';
 import { format } from 'date-fns';
-import { useReports } from '../hooks/useReports';
 import { Report } from '../../../backend/src/types/report';
-
-interface Report {
-  header: {
-    date: string;
-    supervisor: string;
-    unit: string;
-    shift: 'morning' | 'afternoon';
-  };
-  morning: any[];
-  afternoon: any[];
-  observations: {
-    issues: string;
-    highlights: string;
-    attentionPoints: string;
-  };
-  summary: {
-    totalTested: number;
-    totalApproved: number;
-    totalRejected: number;
-    totalV9: number;
-    totalReset: number;
-    totalCleaning: number;
-    totalEquipment: number;
-    testedEquipment: number;
-    cleanedEquipment: number;
-    resetEquipment: number;
-    v9Equipment: number;
-    totalCollaborators: number;
-    morningCollaborators: number;
-    afternoonCollaborators: number;
-  };
-}
 
 const SavedReports: React.FC = () => {
   const { getHistory, setReportData, deleteReport } = useReportData();
@@ -48,7 +14,7 @@ const SavedReports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [filterDate, setFilterDate] = useState('');
-  const { reports: reportsFromUseReports, loading: loadingFromUseReports, error: errorFromUseReports } = useReports();
+  const [deletingReport, setDeletingReport] = useState<string | null>(null);
 
   useEffect(() => {
     loadReports();
@@ -58,7 +24,6 @@ const SavedReports: React.FC = () => {
     try {
       setLoading(true);
       const history = await getHistory();
-      // Filtra apenas relatórios válidos
       const validReports = (history || []).filter((report: any): report is Report => {
         return report && 
                report.header && 
@@ -79,42 +44,24 @@ const SavedReports: React.FC = () => {
 
   const handleView = (report: Report) => {
     setSelectedReport(report);
-    setReportData({
-      ...report,
-      header: {
-        ...report.header,
-        shift: 'morning'
-      },
-      summary: {
-        ...report.summary,
-        totalTested: report.summary.testedEquipment || 0,
-        totalApproved: 0,
-        totalRejected: 0,
-        totalV9: report.summary.v9Equipment || 0,
-        totalReset: report.summary.resetEquipment || 0,
-        totalCleaning: report.summary.cleanedEquipment || 0,
-        totalEquipment: report.summary.totalEquipment || 0,
-        testedEquipment: report.summary.testedEquipment || 0,
-        cleanedEquipment: report.summary.cleanedEquipment || 0,
-        resetEquipment: report.summary.resetEquipment || 0,
-        v9Equipment: report.summary.v9Equipment || 0,
-        totalCollaborators: report.summary.totalCollaborators || 0,
-        morningCollaborators: report.summary.morningCollaborators || 0,
-        afternoonCollaborators: report.summary.afternoonCollaborators || 0
-      }
-    });
+    setReportData(report);
   };
 
   const handleDelete = async (date: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este relatório?')) {
-      try {
-        await deleteReport(date);
-        setReports(reports.filter(report => report.header.date !== date));
-        toast.success('Relatório excluído e estoque atualizado com sucesso!');
-      } catch (error) {
-        console.error('Erro ao excluir relatório:', error);
-        toast.error('Erro ao excluir relatório');
-      }
+    if (!window.confirm('Tem certeza que deseja excluir este relatório? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    setDeletingReport(date);
+    try {
+      await deleteReport(date);
+      await loadReports(); // Recarrega a lista após excluir
+      toast.success('Relatório excluído com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir relatório:', error);
+      toast.error('Erro ao excluir relatório');
+    } finally {
+      setDeletingReport(null);
     }
   };
 
@@ -135,12 +82,11 @@ const SavedReports: React.FC = () => {
             onClick={() => setSelectedReport(null)}
             className="flex items-center"
           >
-            Voltar
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar para lista
           </Button>
         </div>
-        <div id="report-content">
-          <ReportDisplay readOnly report={selectedReport} />
-        </div>
+        <ReportDisplay readOnly report={selectedReport} onBack={() => setSelectedReport(null)} />
       </div>
     );
   }
@@ -148,14 +94,6 @@ const SavedReports: React.FC = () => {
   const filteredReports = filterDate
     ? reports.filter(report => report.header.date.includes(filterDate))
     : reports;
-
-  if (errorFromUseReports) {
-    return (
-      <div className="p-4 text-red-600 bg-red-100 rounded-md">
-        {errorFromUseReports}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -179,92 +117,73 @@ const SavedReports: React.FC = () => {
         </div>
       </div>
 
-      {filteredReports.length === 0 ? (
+      {reports.length === 0 ? (
         <Card>
           <div className="text-center py-8 text-gray-500">
             {filterDate ? 'Nenhum relatório encontrado para esta data.' : 'Nenhum relatório salvo.'}
           </div>
         </Card>
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Relatórios Salvos
-            </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Supervisor
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Unidade
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Turno
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Testados
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Taxa de Aprovação
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReports.map((report: Report) => (
-                  <tr key={report.header.date}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {format(new Date(report.header.date), 'dd/MM/yyyy')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {report.header.supervisor}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {report.header.unit}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {report.header.shift === 'morning' ? 'Manhã' : 'Tarde'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {report.dashboardData.totalTested}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {(report.dashboardData.approvalRate * 100).toFixed(1)}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="secondary"
-                          onClick={() => handleView(report)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Visualizar
-                        </Button>
-                        <Button
-                          variant="danger"
-                          onClick={() => handleDelete(report.header.date)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Excluir
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="grid gap-4">
+          {filteredReports.map((report) => (
+            <Card key={report.header.date}>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {format(new Date(report.header.date), 'dd/MM/yyyy')}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Supervisor: {report.header.supervisor}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Unidade: {report.header.unit}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Turno: {report.header.shift === 'morning' ? 'Manhã' : 'Tarde'}
+                  </p>
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleView(report)}
+                    className="flex items-center"
+                    title="Visualizar relatório"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleDelete(report.header.date)}
+                    className="flex items-center"
+                    disabled={deletingReport === report.header.date}
+                    title="Excluir relatório"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Total Testados</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {report.summary?.totalTested || 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Total V9</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {report.summary?.totalV9 || 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Colaboradores</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {report.summary?.totalCollaborators || 0}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
     </div>
