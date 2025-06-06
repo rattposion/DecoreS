@@ -84,6 +84,7 @@ interface ReportDataContextType {
   loadFromHistory: (date: string) => Promise<void>;
   setReportData: React.Dispatch<React.SetStateAction<ReportData>>;
   loadHistory: () => Promise<ReportData[]>;
+  deleteReport: (date: string) => Promise<void>;
 }
 
 const ReportDataContext = createContext<ReportDataContextType | undefined>(undefined);
@@ -286,6 +287,33 @@ export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
     setReportData(initialReportData);
   }, []);
 
+  // Excluir relatório e atualizar estoque
+  const deleteReport = useCallback(async (date: string) => {
+    try {
+      const response = await fetch(`${endpoints.reports}/${date}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao excluir relatório');
+      }
+
+      const result = await response.json();
+      
+      // Atualizar o estoque local com os dados retornados do servidor
+      if (result.updatedStock) {
+        localStorage.setItem('decore_stock', JSON.stringify(result.updatedStock));
+      }
+
+      toast.success('Relatório excluído com sucesso!');
+      return result;
+    } catch (error) {
+      console.error('Erro ao excluir relatório:', error);
+      toast.error('Erro ao excluir relatório');
+      throw error;
+    }
+  }, []);
+
   const value = {
     reportData,
     updateReportHeader,
@@ -298,7 +326,8 @@ export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
     getHistory,
     loadFromHistory,
     setReportData,
-    loadHistory: getHistory
+    loadHistory: getHistory,
+    deleteReport
   };
 
   return (
