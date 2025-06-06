@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useStock } from './useStock';
 import { ReportData } from '../types/report';
+import { endpoints } from '../config/api';
 import toast from 'react-hot-toast';
 
 // Tipos do relatório
@@ -126,9 +127,9 @@ export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
   // Buscar histórico via API
   const getHistory = useCallback(async (): Promise<ReportData[]> => {
     try {
-      const response = await fetch('http://localhost:3001/api/reports');
+      const response = await fetch(endpoints.reports);
       if (!response.ok) {
-        throw new Error('Failed to fetch reports');
+        throw new Error('Falha ao buscar relatórios');
       }
       const data = await response.json();
       return data;
@@ -145,11 +146,11 @@ export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
   const saveToHistory = useCallback(async () => {
     try {
       // Verificar se já existe um relatório para esta data
-      const response = await fetch(`http://localhost:3001/api/reports/${reportData.header.date}`);
+      const response = await fetch(`${endpoints.reports}/${reportData.header.date}`);
       const exists = response.ok;
       
       // Salvar ou atualizar relatório
-      const saveResponse = await fetch(`http://localhost:3001/api/reports${exists ? `/${reportData.header.date}` : ''}`, {
+      const saveResponse = await fetch(`${endpoints.reports}${exists ? `/${reportData.header.date}` : ''}`, {
         method: exists ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -158,7 +159,7 @@ export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (!saveResponse.ok) {
-        throw new Error('Failed to save report');
+        throw new Error('Falha ao salvar relatório');
       }
 
       // Calcular totais de equipamentos

@@ -5,6 +5,7 @@ import Button from './Button';
 import Card from './Card';
 import ReportDisplay from './ReportDisplay';
 import toast from 'react-hot-toast';
+import { endpoints } from '../config/api';
 
 interface Report {
   header: {
@@ -101,29 +102,22 @@ const SavedReports: React.FC = () => {
   };
 
   const handleDelete = async (date: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir este relatório?')) {
-      return;
-    }
+    if (window.confirm('Tem certeza que deseja excluir este relatório?')) {
+      try {
+        const response = await fetch(`${endpoints.reports}/${date}`, {
+          method: 'DELETE'
+        });
 
-    try {
-      const response = await fetch(`http://localhost:3001/api/reports/${date}`, {
-        method: 'DELETE'
-      });
+        if (!response.ok) {
+          throw new Error('Falha ao excluir relatório');
+        }
 
-      if (!response.ok) {
-        throw new Error('Falha ao excluir relatório');
+        toast.success('Relatório excluído com sucesso!');
+        onDelete(date);
+      } catch (error) {
+        console.error('Erro ao excluir relatório:', error);
+        toast.error('Erro ao excluir relatório');
       }
-
-      toast.success('Relatório excluído com sucesso!');
-      // Atualiza a lista de relatórios localmente sem fazer nova requisição
-      setReports(prevReports => prevReports.filter(report => report.header.date !== date));
-      // Limpa o relatório selecionado se for o que está sendo excluído
-      if (selectedReport?.header.date === date) {
-        setSelectedReport(null);
-      }
-    } catch (error) {
-      console.error('Erro ao excluir relatório:', error);
-      toast.error('Erro ao excluir relatório');
     }
   };
 
