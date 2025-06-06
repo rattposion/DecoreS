@@ -20,13 +20,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
-    "esModuleInterop": true,
-    "types": ["node", "@vercel/node"]
+    "esModuleInterop": true
   },
-  "include": [
-    "src",
-    "api",
-    "vite.config.ts"
-  ],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"],
+  "exclude": ["api", "node_modules"]
 }
