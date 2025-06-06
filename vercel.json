@@ -16,7 +16,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://decore-s.vercel.app"
+          "value": "*"
         },
         {
           "key": "Access-Control-Allow-Methods",
