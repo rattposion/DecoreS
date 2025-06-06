@@ -1,5 +1,5 @@
 import { StockData, StockMovement } from '../types/stock';
-import { stockApi } from '../api/stock';
+import { endpoints } from '../config/api';
 
 const STOCK_KEY = 'decore_stock';
 
@@ -24,14 +24,22 @@ const initialStock: StockData = {
 export const stockService = {
   async getStock(): Promise<StockData> {
     try {
-      // Tentar buscar da API primeiro
-      const stock = await stockApi.getStock();
-      // Salvar no localStorage como backup
+      const response = await fetch(endpoints.stock, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao buscar estoque');
+      }
+      
+      const stock = await response.json();
       localStorage.setItem(STOCK_KEY, JSON.stringify(stock));
       return stock;
     } catch (error) {
       console.error('Erro ao buscar da API, usando localStorage:', error);
-      // Se falhar, tentar localStorage
       const savedStock = localStorage.getItem(STOCK_KEY);
       if (savedStock) {
         return JSON.parse(savedStock);
@@ -40,16 +48,75 @@ export const stockService = {
     }
   },
 
-  async saveStock(stock: StockData): Promise<void> {
+  async updateStock(stock: StockData): Promise<void> {
     try {
-      // Tentar salvar na API primeiro
-      await stockApi.updateStock(stock);
-      // Salvar no localStorage como backup
+      const response = await fetch(endpoints.stock, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(stock)
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar estoque');
+      }
+
       localStorage.setItem(STOCK_KEY, JSON.stringify(stock));
     } catch (error) {
-      console.error('Erro ao salvar na API, usando apenas localStorage:', error);
-      // Se falhar, salvar apenas no localStorage
+      console.error('Erro ao atualizar na API:', error);
       localStorage.setItem(STOCK_KEY, JSON.stringify(stock));
+      throw error;
+    }
+  },
+
+  async addMovement(movement: StockMovement): Promise<StockData> {
+    try {
+      const response = await fetch(`${endpoints.stock}/movement`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(movement)
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao adicionar movimento');
+      }
+
+      const updatedStock = await response.json();
+      localStorage.setItem(STOCK_KEY, JSON.stringify(updatedStock));
+      return updatedStock;
+    } catch (error) {
+      console.error('Erro ao adicionar movimento:', error);
+      throw error;
+    }
+  },
+
+  async getMovements(startDate?: string, endDate?: string): Promise<StockMovement[]> {
+    try {
+      let url = `${endpoints.stock}/movements`;
+      if (startDate || endDate) {
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        url += `?${params.toString()}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao buscar movimentações');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao buscar movimentações:', error);
       throw error;
     }
   },
@@ -57,7 +124,7 @@ export const stockService = {
   async addEntry(movement: Omit<StockMovement, 'date' | 'type'>): Promise<StockData> {
     try {
       // Tentar adicionar via API
-      const newStock = await stockApi.addMovement({
+      const newStock = await this.addMovement({
         ...movement,
         date: new Date().toISOString(),
         type: 'entry'
@@ -89,7 +156,7 @@ export const stockService = {
         movements: [newMovement, ...stock.movements]
       };
 
-      await this.saveStock(newStock);
+      await this.updateStock(newStock);
       return newStock;
     }
   },
@@ -97,7 +164,7 @@ export const stockService = {
   async removeFromStock(movement: Omit<StockMovement, 'date' | 'type'>): Promise<StockData> {
     try {
       // Tentar remover via API
-      const newStock = await stockApi.addMovement({
+      const newStock = await this.addMovement({
         ...movement,
         date: new Date().toISOString(),
         type: 'exit'
@@ -134,7 +201,7 @@ export const stockService = {
         movements: [newMovement, ...stock.movements]
       };
 
-      await this.saveStock(newStock);
+      await this.updateStock(newStock);
       return newStock;
     }
   },
@@ -154,27 +221,11 @@ export const stockService = {
         }
       };
 
-      await this.saveStock(newStock);
+      await this.updateStock(newStock);
       return newStock;
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       throw error;
-    }
-  },
-
-  async getStockMovements(startDate?: string, endDate?: string): Promise<StockMovement[]> {
-    try {
-      // Tentar buscar da API
-      return await stockApi.getMovements(startDate, endDate);
-    } catch (error) {
-      console.error('Erro ao buscar movimentações da API, usando localStorage:', error);
-      // Se falhar, usar localStorage
-      const stock = await this.getStock();
-      return stock.movements.filter(movement => {
-        if (startDate && movement.date < startDate) return false;
-        if (endDate && movement.date > endDate) return false;
-        return true;
-      });
     }
   }
 }; 

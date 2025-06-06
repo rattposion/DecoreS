@@ -23,6 +23,7 @@ const initialStock: StockData = {
 
 interface StockContextType {
   stock: StockData;
+  loading: boolean;
   addEntry: (movement: Omit<StockMovement, 'date' | 'type'>) => Promise<void>;
   removeFromStock: (movement: Omit<StockMovement, 'date' | 'type'>) => Promise<void>;
   updateItemStatus: (model: 'v1' | 'v9', status: StockItem['status']) => Promise<void>;
@@ -34,21 +35,26 @@ const StockContext = createContext<StockContextType | undefined>(undefined);
 
 export const StockProvider = ({ children }: { children: ReactNode }) => {
   const [stock, setStock] = useState<StockData>(initialStock);
+  const [loading, setLoading] = useState(false);
 
   // Carregar estoque inicial
   const loadStock = useCallback(async () => {
     try {
+      setLoading(true);
       const stockData = await stockService.getStock();
       setStock(stockData);
     } catch (error) {
       console.error('Erro ao carregar estoque:', error);
       toast.error('Erro ao carregar dados do estoque');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   // Adicionar entrada ao estoque
   const addEntry = useCallback(async (movement: Omit<StockMovement, 'date' | 'type'>) => {
     try {
+      setLoading(true);
       const newStock = await stockService.addEntry(movement);
       setStock(newStock);
       toast.success('Entrada registrada com sucesso!');
@@ -56,12 +62,15 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao adicionar entrada:', error);
       toast.error('Erro ao registrar entrada');
       throw error;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   // Remover do estoque
   const removeFromStock = useCallback(async (movement: Omit<StockMovement, 'date' | 'type'>) => {
     try {
+      setLoading(true);
       const newStock = await stockService.removeFromStock(movement);
       setStock(newStock);
       toast.success('Saída registrada com sucesso!');
@@ -69,12 +78,15 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao remover do estoque:', error);
       toast.error('Erro ao registrar saída');
       throw error;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   // Atualizar status do item
   const updateItemStatus = useCallback(async (model: 'v1' | 'v9', status: StockItem['status']) => {
     try {
+      setLoading(true);
       const newStock = await stockService.updateItemStatus(model, status);
       setStock(newStock);
       toast.success('Status atualizado com sucesso!');
@@ -82,12 +94,23 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
       console.error('Erro ao atualizar status:', error);
       toast.error('Erro ao atualizar status');
       throw error;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   // Buscar movimentações com filtro de data
-  const getStockMovements = useCallback(async (startDate?: string, endDate?: string) => {
-    return stockService.getStockMovements(startDate, endDate);
+  const getMovements = useCallback(async (startDate?: string, endDate?: string) => {
+    try {
+      setLoading(true);
+      return await stockService.getMovements(startDate, endDate);
+    } catch (error) {
+      console.error('Erro ao buscar movimentações:', error);
+      toast.error('Erro ao buscar movimentações');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   // Carregar estoque inicial
@@ -97,10 +120,11 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     stock,
+    loading,
     addEntry,
     removeFromStock,
     updateItemStatus,
-    getStockMovements,
+    getStockMovements: getMovements,
     loadStock
   };
 
