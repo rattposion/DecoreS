@@ -89,6 +89,14 @@ interface ReportDataContextType {
 
 const ReportDataContext = createContext<ReportDataContextType | undefined>(undefined);
 
+// Função para validar data
+const isValidDate = (date: string) => {
+  const selectedDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return selectedDate <= today;
+};
+
 export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
   const [reportData, setReportData] = useState<ReportData>(() => {
     const savedData = localStorage.getItem(STORAGE_KEY);
@@ -236,6 +244,11 @@ export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
   }, [reportData]);
 
   const updateReportHeader = useCallback((field: 'date' | 'supervisor' | 'unit', value: string) => {
+    if (field === 'date' && !isValidDate(value)) {
+      toast.error('Não é possível selecionar uma data futura');
+      return;
+    }
+    
     setReportData(prev => ({
       ...prev,
       header: {

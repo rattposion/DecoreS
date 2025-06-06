@@ -13,7 +13,6 @@ interface UseReportsReturn {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-const REFRESH_INTERVAL = 60000; // Atualiza a cada 1 minuto
 
 export function useReports(): UseReportsReturn {
   const [reports, setReports] = useState<Report[]>([]);
@@ -23,6 +22,7 @@ export function useReports(): UseReportsReturn {
 
   const fetchReports = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`${API_URL}/api/reports`);
       setReports(response.data);
       
@@ -44,7 +44,7 @@ export function useReports(): UseReportsReturn {
   const saveReport = async (report: Omit<Report, '_id' | 'createdAt' | 'updatedAt'>) => {
     try {
       await axios.post(`${API_URL}/api/reports`, report);
-      await fetchReports(); // Atualiza os dados imediatamente após salvar
+      await fetchReports();
     } catch (err) {
       console.error('Erro ao salvar relatório:', err);
       throw err;
@@ -54,7 +54,7 @@ export function useReports(): UseReportsReturn {
   const deleteReport = async (date: string) => {
     try {
       await axios.delete(`${API_URL}/api/reports/${date}`);
-      await fetchReports(); // Atualiza os dados imediatamente após excluir
+      await fetchReports();
     } catch (err) {
       console.error('Erro ao excluir relatório:', err);
       throw err;
@@ -62,16 +62,7 @@ export function useReports(): UseReportsReturn {
   };
 
   useEffect(() => {
-    // Carrega os dados inicialmente
     fetchReports();
-
-    // Configura o intervalo de atualização
-    const intervalId = setInterval(() => {
-      fetchReports();
-    }, REFRESH_INTERVAL);
-
-    // Limpa o intervalo quando o componente é desmontado
-    return () => clearInterval(intervalId);
   }, []);
 
   return {
