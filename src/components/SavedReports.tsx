@@ -113,7 +113,7 @@ const SavedReports: React.FC = () => {
         }
 
         toast.success('Relatório excluído com sucesso!');
-        onDelete(date);
+        setReports(reports.filter(report => report.header.date !== date));
       } catch (error) {
         console.error('Erro ao excluir relatório:', error);
         toast.error('Erro ao excluir relatório');

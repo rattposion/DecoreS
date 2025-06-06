@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { MongoClient, Db } from 'mongodb';
-import { ReportData } from '../src/types/report';
+import { MongoClient } from 'mongodb';
+import { ReportData } from './types';
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://decore:Wesley26.@decore.xvhk00w.mongodb.net/decore_db?retryWrites=true&w=majority";
 let cachedDb: MongoClient | null = null;
