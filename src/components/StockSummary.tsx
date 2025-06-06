@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
+import { Package, ArrowDownCircle, ArrowUpCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { useStock } from '../hooks/useStock';
 import { StockMovement } from '../types/stock';
 import Card from './Card';
@@ -10,9 +10,10 @@ import toast from 'react-hot-toast';
 interface StockSummaryProps {}
 
 const StockSummary: React.FC<StockSummaryProps> = () => {
-  const { stock, loadStock } = useStock();
+  const { stock, loadStock, deleteMovement } = useStock();
   const [showExitForm, setShowExitForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [deletingMovement, setDeletingMovement] = useState<string | null>(null);
 
   useEffect(() => {
     loadStock();
@@ -52,6 +53,21 @@ const StockSummary: React.FC<StockSummaryProps> = () => {
     }
     return acc;
   }, { v1: 0, v9: 0 }) || { v1: 0, v9: 0 };
+
+  const handleDeleteMovement = async (date: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este movimento?')) {
+      return;
+    }
+
+    setDeletingMovement(date);
+    try {
+      await deleteMovement(date);
+    } catch (error) {
+      console.error('Erro ao excluir movimento:', error);
+    } finally {
+      setDeletingMovement(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -182,6 +198,7 @@ const StockSummary: React.FC<StockSummaryProps> = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Modelo</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qtd</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsável</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -199,6 +216,16 @@ const StockSummary: React.FC<StockSummaryProps> = () => {
                   <td className="px-4 py-3 text-sm text-gray-900">{movement.model}</td>
                   <td className="px-4 py-3 text-sm text-right font-medium">{movement.quantity}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{movement.responsibleUser}</td>
+                  <td className="px-4 py-3 text-sm text-center">
+                    <button
+                      onClick={() => handleDeleteMovement(movement.date)}
+                      disabled={deletingMovement === movement.date}
+                      className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded-full hover:bg-red-50"
+                      title="Excluir movimento"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

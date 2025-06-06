@@ -227,5 +227,23 @@ export const stockService = {
       console.error('Erro ao atualizar status:', error);
       throw error;
     }
+  },
+
+  async deleteMovement(date: string): Promise<void> {
+    try {
+      const response = await fetch(`${endpoints.stock}/movement/${date}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao excluir movimento');
+      }
+    } catch (error) {
+      console.error('Erro ao excluir movimento:', error);
+      throw error;
+    }
   }
 }; 

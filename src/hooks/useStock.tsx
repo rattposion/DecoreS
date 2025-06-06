@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { StockData, StockItem, StockMovement } from '../types/stock';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { StockData, StockMovement, StockItem } from '../types/stock';
 import { stockService } from '../services/stockService';
 import toast from 'react-hot-toast';
 
@@ -22,18 +22,19 @@ const initialStock: StockData = {
 };
 
 interface StockContextType {
-  stock: StockData;
-  addEntry: (movement: Omit<StockMovement, 'date' | 'type'>) => Promise<void>;
-  removeFromStock: (movement: Omit<StockMovement, 'date' | 'type'>) => Promise<void>;
+  stock: StockData | null;
+  addEntry: (entry: Omit<StockMovement, 'date' | 'type'>) => Promise<void>;
+  removeFromStock: (exit: Omit<StockMovement, 'date' | 'type'>) => Promise<void>;
   updateItemStatus: (model: 'v1' | 'v9', status: StockItem['status']) => Promise<void>;
   getStockMovements: (startDate?: string, endDate?: string) => Promise<StockMovement[]>;
   loadStock: () => Promise<void>;
+  deleteMovement: (date: string) => Promise<void>;
 }
 
 const StockContext = createContext<StockContextType | undefined>(undefined);
 
 export const StockProvider = ({ children }: { children: ReactNode }) => {
-  const [stock, setStock] = useState<StockData>(initialStock);
+  const [stock, setStock] = useState<StockData | null>(null);
 
   // Carregar estoque inicial
   const loadStock = useCallback(async () => {
@@ -96,6 +97,18 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const deleteMovement = useCallback(async (date: string) => {
+    try {
+      await stockService.deleteMovement(date);
+      await loadStock();
+      toast.success('Movimento excluído com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir movimento:', error);
+      toast.error('Erro ao excluir movimento');
+      throw error;
+    }
+  }, [loadStock]);
+
   // Carregar estoque inicial
   useEffect(() => {
     loadStock();
@@ -107,7 +120,8 @@ export const StockProvider = ({ children }: { children: ReactNode }) => {
     removeFromStock,
     updateItemStatus,
     getStockMovements: getMovements,
-    loadStock
+    loadStock,
+    deleteMovement
   };
 
   return (
