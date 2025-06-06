@@ -6,35 +6,13 @@ import Button from './Button';
 import { exportToPDF } from '../utils/pdfExport';
 import toast from 'react-hot-toast';
 import ReportDisplay from './ReportDisplay';
-
-interface Report {
-  header: {
-    date: string;
-    supervisor: string;
-    unit: string;
-  };
-  morning: Array<{
-    name: string;
-    tested?: number;
-    cleaned?: number;
-    resetados?: number;
-    v9?: number;
-  }>;
-  afternoon: Array<{
-    name: string;
-    tested?: number;
-    cleaned?: number;
-    resetados?: number;
-    v9?: number;
-  }>;
-  observations?: string;
-}
+import { ReportData } from '../types/report';
 
 const ReportsList: React.FC = () => {
   const { getHistory, setReportData } = useReportData();
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports] = useState<ReportData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [selectedReport, setSelectedReport] = useState<ReportData | null>(null);
 
   useEffect(() => {
     loadReports();
@@ -45,7 +23,7 @@ const ReportsList: React.FC = () => {
       setLoading(true);
       const history = await getHistory();
       // Filtra apenas relatórios válidos
-      const validReports = (history || []).filter((report: any): report is Report => {
+      const validReports = (history || []).filter((report: any): report is ReportData => {
         return report && 
                report.header && 
                typeof report.header.date === 'string' &&
@@ -61,12 +39,12 @@ const ReportsList: React.FC = () => {
     }
   };
 
-  const handleView = (report: Report) => {
+  const handleView = (report: ReportData) => {
     setSelectedReport(report);
     setReportData(report);
   };
 
-  const handleExport = async (report: Report) => {
+  const handleExport = async (report: ReportData) => {
     try {
       handleView(report);
       await new Promise(resolve => setTimeout(resolve, 500));

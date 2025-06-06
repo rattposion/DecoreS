@@ -4,6 +4,7 @@ import { Package, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react
 import Card from './Card';
 import Button from './Button';
 import toast from 'react-hot-toast';
+import { ModelType } from '../types/stock';
 
 interface StockEntryFormProps {
   onClose: () => void;
@@ -12,9 +13,16 @@ interface StockEntryFormProps {
 
 const StockEntryForm: React.FC<StockEntryFormProps> = ({ onClose, isEntry = true }) => {
   const { addEntry, removeFromStock } = useStock();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    model: ModelType;
+    quantity: number;
+    source: string;
+    destination: string;
+    responsibleUser: string;
+    observations: string;
+  }>({
     model: 'ZTE 670 V1',
-    quantity: 1,
+    quantity: 0,
     source: '',
     destination: '',
     responsibleUser: '',

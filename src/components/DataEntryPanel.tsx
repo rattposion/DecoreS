@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react';
+import { Save, FileDown, ArrowLeft, Package } from 'lucide-react';
 import { useReportData } from '../hooks/useReportData';
 import ReportHeader from './ReportHeader';
 import ProductionTable from './ProductionTable';
 import ObservationsSection from './ObservationsSection';
 import SummarySection from './SummarySection';
-import { Save, FileDown, ArrowLeft, Package } from 'lucide-react';
 import { exportToPDF } from '../utils/pdfExport';
-import Card from './Card';
 import Button from './Button';
 import toast from 'react-hot-toast';
 
@@ -61,7 +60,7 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({ onBack }) => {
     const morningCollaborators = reportData.morning.filter(c => c.name.trim() !== '').length;
     const afternoonCollaborators = reportData.afternoon.filter(c => c.name.trim() !== '').length;
 
-    const summary = {
+    return {
       totalEquipment: stockPreview.v1 + stockPreview.v9,
       testedEquipment: stockPreview.v1,
       cleanedEquipment: reportData.morning.reduce((sum, c) => sum + (c.cleaned || 0), 0) +
@@ -73,8 +72,6 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({ onBack }) => {
       morningCollaborators,
       afternoonCollaborators
     };
-
-    return summary;
   };
 
   // Atualizar o resumo sempre que os colaboradores mudarem
@@ -82,7 +79,16 @@ const DataEntryPanel: React.FC<DataEntryPanelProps> = ({ onBack }) => {
     const summary = calculateSummary();
     setReportData(prev => ({
       ...prev,
-      summary
+      summary: {
+        ...prev.summary,
+        ...summary,
+        totalTested: summary.testedEquipment,
+        totalApproved: 0,
+        totalRejected: 0,
+        totalV9: summary.v9Equipment,
+        totalReset: summary.resetEquipment,
+        totalCleaning: summary.cleanedEquipment
+      }
     }));
   }, [reportData.morning, reportData.afternoon]);
 

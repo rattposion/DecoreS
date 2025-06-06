@@ -5,15 +5,22 @@ export interface StockItem {
   status: 'DISPONÍVEL' | 'RESERVADO' | 'EM_MANUTENÇÃO';
 }
 
+export type ModelType = 'ZTE 670 V1' | 'ZTE 670 V9';
+
 export interface StockMovement {
-  model: 'ZTE 670 V1' | 'ZTE 670 V9';
-  quantity: number;
   date: string;
-  type: 'ENTRADA' | 'SAÍDA';
+  type: 'entry' | 'exit';
+  model: ModelType;
+  quantity: number;
+  source: string;
+  destination: string;
   responsibleUser: string;
-  destination?: string;
-  source?: string;
-  observations?: string;
+  observations: string;
+}
+
+export interface StockState {
+  'ZTE 670 V1': number;
+  'ZTE 670 V9': number;
 }
 
 export interface StockData {

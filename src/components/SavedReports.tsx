@@ -11,6 +11,7 @@ interface Report {
     date: string;
     supervisor: string;
     unit: string;
+    shift: 'morning' | 'afternoon';
   };
   morning: any[];
   afternoon: any[];
@@ -20,6 +21,12 @@ interface Report {
     attentionPoints: string;
   };
   summary: {
+    totalTested: number;
+    totalApproved: number;
+    totalRejected: number;
+    totalV9: number;
+    totalReset: number;
+    totalCleaning: number;
     totalEquipment: number;
     testedEquipment: number;
     cleanedEquipment: number;
@@ -67,7 +74,30 @@ const SavedReports: React.FC = () => {
 
   const handleView = (report: Report) => {
     setSelectedReport(report);
-    setReportData(report);
+    setReportData({
+      ...report,
+      header: {
+        ...report.header,
+        shift: 'morning'
+      },
+      summary: {
+        ...report.summary,
+        totalTested: report.summary.testedEquipment || 0,
+        totalApproved: 0,
+        totalRejected: 0,
+        totalV9: report.summary.v9Equipment || 0,
+        totalReset: report.summary.resetEquipment || 0,
+        totalCleaning: report.summary.cleanedEquipment || 0,
+        totalEquipment: report.summary.totalEquipment || 0,
+        testedEquipment: report.summary.testedEquipment || 0,
+        cleanedEquipment: report.summary.cleanedEquipment || 0,
+        resetEquipment: report.summary.resetEquipment || 0,
+        v9Equipment: report.summary.v9Equipment || 0,
+        totalCollaborators: report.summary.totalCollaborators || 0,
+        morningCollaborators: report.summary.morningCollaborators || 0,
+        afternoonCollaborators: report.summary.afternoonCollaborators || 0
+      }
+    });
   };
 
   const handleDelete = async (date: string) => {

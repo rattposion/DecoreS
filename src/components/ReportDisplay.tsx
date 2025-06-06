@@ -1,17 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useReportData, ReportData } from '../hooks/useReportData';
-import { RefreshCw, CheckCircle, Settings, Database, ArrowLeft, Download, Package, Truck, Droplet, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useReportData } from '../hooks/useReportData';
+import { ReportData } from '../types/report';
+import { RefreshCw, Database, Package, Truck, Plus } from 'lucide-react';
 import Card from './Card';
 import Button from './Button';
-
-const percent = (value: number, total: number) => total > 0 ? Math.round((value / total) * 100) : 0;
-
-// Função utilitária para formatar data yyyy-mm-dd para dd/mm/aaaa
-function formatDateBR(dateStr?: string) {
-  if (!dateStr) return '';
-  const [y, m, d] = dateStr.split('-');
-  return `${d}/${m}/${y}`;
-}
 
 interface ExitReport {
   v1Quantity: number;
@@ -25,7 +17,7 @@ interface ExitReport {
 interface ReportDisplayProps {
   onNewReport?: () => void;
   readOnly?: boolean;
-  report?: any;
+  report?: ReportData;
 }
 
 const ReportDisplay: React.FC<ReportDisplayProps> = ({ onNewReport, readOnly, report }) => {
@@ -33,14 +25,10 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ onNewReport, readOnly, re
   const [exitTotals, setExitTotals] = useState({ v1: 0, v9: 0 });
   const [historyData, setHistoryData] = useState<ReportData[]>([]);
 
-  // Filtros de data
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-
   // Totais do dia
-  const totalManha = reportData.morning.reduce((sum, c) => sum + (c.cleaned || 0), 0);
-  const totalTardeReset = reportData.afternoon.reduce((sum, c) => sum + (c.tested || 0), 0);
-  const totalTardeLimpeza = reportData.afternoon.reduce((sum, c) => sum + (c.cleaned || 0), 0);
+  const totalManha = reportData.morning.reduce((sum: number, c: any) => sum + (c.cleaned || 0), 0);
+  const totalTardeReset = reportData.afternoon.reduce((sum: number, c: any) => sum + (c.tested || 0), 0);
+  const totalTardeLimpeza = reportData.afternoon.reduce((sum: number, c: any) => sum + (c.cleaned || 0), 0);
   const totalEquip = totalManha + totalTardeReset + totalTardeLimpeza;
 
   // Carregar histórico
@@ -61,8 +49,6 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ onNewReport, readOnly, re
   // Filtragem por intervalo de datas
   const filteredHistory = historyData.filter(r => {
     if (!r || !r.header || !r.header.date) return false;
-    if (startDate && r.header.date < startDate) return false;
-    if (endDate && r.header.date > endDate) return false;
     return true;
   });
 
@@ -72,45 +58,15 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ onNewReport, readOnly, re
     return r.header.date.slice(0, 7) === currentMonth;
   });
 
-  const totalMesManha = monthReports.reduce((sum, r) => 
-    sum + (Array.isArray(r.morning) ? r.morning.reduce((s, c) => s + (c.cleaned || 0), 0) : 0), 0);
-  
-  const totalMesTardeReset = monthReports.reduce((sum, r) => 
-    sum + (Array.isArray(r.afternoon) ? r.afternoon.reduce((s, c) => s + (c.tested || 0), 0) : 0), 0);
-  
-  const totalMesTardeLimpeza = monthReports.reduce((sum, r) => 
-    sum + (Array.isArray(r.afternoon) ? r.afternoon.reduce((s, c) => s + (c.cleaned || 0), 0) : 0), 0);
+  const totalGeralResetados = monthReports.reduce((sum: number, r: ReportData) =>
+    sum + (Array.isArray(r.morning) ? r.morning.reduce((s: number, c: any) => s + (c.resetados || 0), 0) : 0) +
+    (Array.isArray(r.afternoon) ? r.afternoon.reduce((s: number, c: any) => s + (c.resetados || 0), 0) : 0), 0);
 
-  // Totais gerais (apenas do intervalo filtrado)
-  const totalGeralReset = useMemo(() => {
-    return filteredHistory.reduce((acc, r) => {
-      if (!r || !r.morning || !r.afternoon) return acc;
-      const resetTotal = 
-        (Array.isArray(r.morning) ? r.morning.reduce((sum, c) => sum + (c.resetados || 0), 0) : 0) +
-        (Array.isArray(r.afternoon) ? r.afternoon.reduce((sum, c) => sum + (c.resetados || 0), 0) : 0);
-      return acc + resetTotal;
-    }, 0);
-  }, [filteredHistory]);
+  const totalGeralLimpeza = monthReports.reduce((sum: number, r: ReportData) =>
+    sum + (Array.isArray(r.morning) ? r.morning.reduce((s: number, c: any) => s + (c.cleaned || 0), 0) : 0) +
+    (Array.isArray(r.afternoon) ? r.afternoon.reduce((s: number, c: any) => s + (c.cleaned || 0), 0) : 0), 0);
 
-  const totalGeralLimpeza = useMemo(() => {
-    return filteredHistory.reduce((acc, r) => {
-      if (!r || !r.morning || !r.afternoon) return acc;
-      const limpezaTotal = 
-        (Array.isArray(r.morning) ? r.morning.reduce((sum, c) => sum + (c.cleaned || 0), 0) : 0) +
-        (Array.isArray(r.afternoon) ? r.afternoon.reduce((sum, c) => sum + (c.cleaned || 0), 0) : 0);
-      return acc + limpezaTotal;
-    }, 0);
-  }, [filteredHistory]);
-
-  const totalGeralLimpezaManha = useMemo(() => {
-    return filteredHistory.reduce((acc, r) => {
-      if (!r || !r.morning) return acc;
-      const limpezaManhaTotal = Array.isArray(r.morning) ? 
-        r.morning.reduce((sum, c) => sum + (c.tested || 0), 0) : 0;
-      return acc + limpezaManhaTotal;
-    }, 0);
-  }, [filteredHistory]);
-
+  // Carregar saídas do localStorage
   useEffect(() => {
     const savedExits = JSON.parse(localStorage.getItem('equipment_exits') || '[]');
     const totals = savedExits.reduce((acc: { v1: number; v9: number }, exit: ExitReport) => ({
@@ -121,41 +77,6 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ onNewReport, readOnly, re
   }, []);
 
   const data = report || reportData;
-
-  const calculateTotals = () => {
-    const morningTotals = data.morning.reduce(
-      (acc: any, curr: any) => ({
-        tested: (acc.tested || 0) + (curr.tested || 0),
-        cleaned: (acc.cleaned || 0) + (curr.cleaned || 0),
-        resetados: (acc.resetados || 0) + (curr.resetados || 0),
-        v9: (acc.v9 || 0) + (curr.v9 || 0),
-      }),
-      {}
-    );
-
-    const afternoonTotals = data.afternoon.reduce(
-      (acc: any, curr: any) => ({
-        tested: (acc.tested || 0) + (curr.tested || 0),
-        cleaned: (acc.cleaned || 0) + (curr.cleaned || 0),
-        resetados: (acc.resetados || 0) + (curr.resetados || 0),
-        v9: (acc.v9 || 0) + (curr.v9 || 0),
-      }),
-      {}
-    );
-
-    return {
-      morning: morningTotals,
-      afternoon: afternoonTotals,
-      total: {
-        tested: (morningTotals.tested || 0) + (afternoonTotals.tested || 0),
-        cleaned: (morningTotals.cleaned || 0) + (afternoonTotals.cleaned || 0),
-        resetados: (morningTotals.resetados || 0) + (afternoonTotals.resetados || 0),
-        v9: (morningTotals.v9 || 0) + (afternoonTotals.v9 || 0),
-      },
-    };
-  };
-
-  const totals = calculateTotals();
 
   if (!data || !data.header || !data.header.date) {
     return <div className="text-center text-gray-500 mt-10">Nenhum relatório preenchido ainda.</div>;
@@ -192,11 +113,15 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ onNewReport, readOnly, re
             <div className="flex flex-col gap-2 md:gap-4">
               <div className="bg-white/80 rounded-xl p-3 md:p-4 shadow-inner flex flex-col items-center">
                 <span className="text-xs md:text-sm text-gray-500">670L V1</span>
-                <span className="text-2xl md:text-3xl font-extrabold text-blue-700 mt-1">{data.morning.reduce((sum, c) => sum + (c.tested || 0), 0)}</span>
+                <span className="text-2xl md:text-3xl font-extrabold text-blue-700 mt-1">
+                  {data.morning.reduce((sum: number, c: any) => sum + (c.tested || 0), 0)}
+                </span>
               </div>
               <div className="bg-white/80 rounded-xl p-3 md:p-4 shadow-inner flex flex-col items-center">
                 <span className="text-xs md:text-sm text-gray-500">670L V9</span>
-                <span className="text-2xl md:text-3xl font-extrabold text-purple-700 mt-1">{data.afternoon.reduce((sum, c) => sum + (c.v9 || 0), 0)}</span>
+                <span className="text-2xl md:text-3xl font-extrabold text-purple-700 mt-1">
+                  {data.afternoon.reduce((sum: number, c: any) => sum + (c.v9 || 0), 0)}
+                </span>
               </div>
             </div>
           </div>
@@ -233,7 +158,7 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ onNewReport, readOnly, re
               </div>
               <div className="flex flex-col w-full">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-4xl font-extrabold text-blue-700">{totalGeralReset}</span>
+                  <span className="text-4xl font-extrabold text-blue-700">{totalGeralResetados}</span>
                   <span className="text-sm text-gray-500">Todos os relatórios</span>
                 </div>
                 <div className="flex justify-between items-center">

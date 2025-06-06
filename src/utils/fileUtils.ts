@@ -1,5 +1,3 @@
-import { ReportData } from '../hooks/useReportData';
-
 // Função para salvar relatórios e saídas em um único arquivo de backup
 export const saveReportsToFiles = async () => {
   try {

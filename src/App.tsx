@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import DataEntryPanel from './components/DataEntryPanel';
 import ReportDisplay from './components/ReportDisplay';

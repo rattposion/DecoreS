@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useStock } from './useStock';
+import { ReportData } from '../types/report';
 import toast from 'react-hot-toast';
 
 // Tipos do relatório
@@ -9,31 +10,6 @@ export interface Collaborator {
   cleaned: number;
   resetados: number;
   v9: number;
-}
-
-export interface ReportData {
-  header: {
-    date: string;
-    supervisor: string;
-    unit: string;
-  };
-  morning: Collaborator[];
-  afternoon: Collaborator[];
-  observations: {
-    issues: string;
-    highlights: string;
-    attentionPoints: string;
-  };
-  summary: {
-    totalEquipment: number;
-    testedEquipment: number;
-    cleanedEquipment: number;
-    resetEquipment: number;
-    v9Equipment: number;
-    totalCollaborators: number;
-    morningCollaborators: number;
-    afternoonCollaborators: number;
-  };
 }
 
 const emptyCollaborator = (): Collaborator => ({
@@ -47,17 +23,40 @@ const emptyCollaborator = (): Collaborator => ({
 const initialReportData: ReportData = {
   header: {
     date: new Date().toISOString().split('T')[0],
+    shift: 'morning',
     supervisor: '',
     unit: ''
   },
-  morning: [emptyCollaborator()],
-  afternoon: [emptyCollaborator()],
+  morning: [{
+    name: '',
+    tested: 0,
+    approved: 0,
+    rejected: 0,
+    cleaned: 0,
+    resetados: 0,
+    v9: 0
+  }],
+  afternoon: [{
+    name: '',
+    v9: 0,
+    reset: 0,
+    cleaning: 0,
+    tested: 0,
+    cleaned: 0,
+    resetados: 0
+  }],
   observations: {
     issues: '',
     highlights: '',
     attentionPoints: ''
   },
   summary: {
+    totalTested: 0,
+    totalApproved: 0,
+    totalRejected: 0,
+    totalV9: 0,
+    totalReset: 0,
+    totalCleaning: 0,
     totalEquipment: 0,
     testedEquipment: 0,
     cleanedEquipment: 0,
@@ -171,6 +170,7 @@ export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
           model: 'ZTE 670 V1',
           quantity: v1Total,
           source: 'MANUTENÇÃO',
+          destination: 'ESTOQUE',
           responsibleUser: reportData.header.supervisor || 'Sistema',
           observations: `Entrada automática do relatório de ${new Date(reportData.header.date).toLocaleDateString()}`
         });
@@ -181,6 +181,7 @@ export const ReportDataProvider = ({ children }: { children: ReactNode }) => {
           model: 'ZTE 670 V9',
           quantity: v9Total,
           source: 'MANUTENÇÃO',
+          destination: 'ESTOQUE',
           responsibleUser: reportData.header.supervisor || 'Sistema',
           observations: `Entrada automática do relatório de ${new Date(reportData.header.date).toLocaleDateString()}`
         });

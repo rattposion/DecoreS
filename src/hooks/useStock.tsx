@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { StockData, StockItem, StockMovement } from '../types/stock';
 import { stockService } from '../services/stockService';
 import toast from 'react-hot-toast';

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Package, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
 import { useStock } from '../hooks/useStock';
+import { StockMovement } from '../types/stock';
 import Card from './Card';
 import Button from './Button';
 import StockExit from './StockExit';
 import toast from 'react-hot-toast';
 
-const StockSummary: React.FC = () => {
+interface StockSummaryProps {}
+
+const StockSummary: React.FC<StockSummaryProps> = () => {
   const { stock, loadStock } = useStock();
   const [showExitForm, setShowExitForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,8 +32,8 @@ const StockSummary: React.FC = () => {
   };
 
   // Calcular totais de saída
-  const totalExits = stock?.movements?.reduce((acc, movement) => {
-    if (movement.type === 'SAÍDA') {
+  const totalExits = stock?.movements?.reduce((acc, movement: StockMovement) => {
+    if (movement.type === 'exit') {
       return {
         v1: acc.v1 + (movement.model === 'ZTE 670 V1' ? movement.quantity : 0),
         v9: acc.v9 + (movement.model === 'ZTE 670 V9' ? movement.quantity : 0)
@@ -40,8 +43,8 @@ const StockSummary: React.FC = () => {
   }, { v1: 0, v9: 0 }) || { v1: 0, v9: 0 };
 
   // Calcular totais de entrada
-  const totalEntries = stock?.movements?.reduce((acc, movement) => {
-    if (movement.type === 'ENTRADA') {
+  const totalEntries = stock?.movements?.reduce((acc, movement: StockMovement) => {
+    if (movement.type === 'entry') {
       return {
         v1: acc.v1 + (movement.model === 'ZTE 670 V1' ? movement.quantity : 0),
         v9: acc.v9 + (movement.model === 'ZTE 670 V9' ? movement.quantity : 0)
@@ -189,8 +192,8 @@ const StockSummary: React.FC = () => {
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${movement.type === 'ENTRADA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {movement.type === 'ENTRADA' ? 'Entrada' : 'Saída'}
+                      ${movement.type === 'entry' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {movement.type === 'entry' ? 'Entrada' : 'Saída'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">{movement.model}</td>

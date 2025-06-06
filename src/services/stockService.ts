@@ -60,7 +60,7 @@ export const stockService = {
       const newStock = await stockApi.addMovement({
         ...movement,
         date: new Date().toISOString(),
-        type: 'ENTRADA'
+        type: 'entry'
       });
       // Atualizar localStorage
       localStorage.setItem(STOCK_KEY, JSON.stringify(newStock));
@@ -72,7 +72,7 @@ export const stockService = {
       const newMovement: StockMovement = {
         ...movement,
         date: new Date().toISOString(),
-        type: 'ENTRADA'
+        type: 'entry'
       };
 
       const modelKey = movement.model === 'ZTE 670 V1' ? 'v1' : 'v9';
@@ -100,7 +100,7 @@ export const stockService = {
       const newStock = await stockApi.addMovement({
         ...movement,
         date: new Date().toISOString(),
-        type: 'SAÍDA'
+        type: 'exit'
       });
       // Atualizar localStorage
       localStorage.setItem(STOCK_KEY, JSON.stringify(newStock));
@@ -118,7 +118,7 @@ export const stockService = {
       const newMovement: StockMovement = {
         ...movement,
         date: new Date().toISOString(),
-        type: 'SAÍDA'
+        type: 'exit'
       };
 
       const newStock = {

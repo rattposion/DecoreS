@@ -3,47 +3,63 @@ import { Package } from 'lucide-react';
 import { useStock } from '../hooks/useStock';
 import Button from './Button';
 import toast from 'react-hot-toast';
+import { ModelType } from '../types/stock';
 
 const StockExit: React.FC = () => {
   const { stock, removeFromStock } = useStock();
-  const [model, setModel] = useState('ZTE 670 V1');
-  const [quantity, setQuantity] = useState(1);
-  const [destination, setDestination] = useState('');
-  const [responsibleUser, setResponsibleUser] = useState('');
-  const [observations, setObservations] = useState('');
+  const [formData, setFormData] = useState<{
+    model: ModelType;
+    quantity: number;
+    source: string;
+    destination: string;
+    responsibleUser: string;
+    observations: string;
+  }>({
+    model: 'ZTE 670 V1',
+    quantity: 0,
+    source: '',
+    destination: '',
+    responsibleUser: '',
+    observations: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       // Verificar se há quantidade suficiente em estoque
-      const currentStock = model === 'ZTE 670 V1' ? stock?.items?.v1?.quantity || 0 : stock?.items?.v9?.quantity || 0;
+      const currentStock = formData.model === 'ZTE 670 V1' ? stock?.items?.v1?.quantity || 0 : stock?.items?.v9?.quantity || 0;
       
-      if (quantity > currentStock) {
+      if (formData.quantity > currentStock) {
         toast.error('Quantidade indisponível em estoque');
         return;
       }
 
-      if (!destination.trim() || !responsibleUser.trim()) {
+      if (!formData.destination.trim() || !formData.responsibleUser.trim()) {
         toast.error('Preencha todos os campos obrigatórios');
         return;
       }
 
       await removeFromStock({
-        model,
-        quantity,
-        destination,
-        responsibleUser,
-        observations
+        model: formData.model,
+        quantity: formData.quantity,
+        source: 'ESTOQUE',
+        destination: formData.destination,
+        responsibleUser: formData.responsibleUser,
+        observations: formData.observations
       });
 
       toast.success('Saída registrada com sucesso!');
       
       // Limpar formulário
-      setQuantity(1);
-      setDestination('');
-      setResponsibleUser('');
-      setObservations('');
+      setFormData({
+        model: 'ZTE 670 V1',
+        quantity: 0,
+        source: '',
+        destination: '',
+        responsibleUser: '',
+        observations: ''
+      });
     } catch (error) {
       console.error('Erro ao registrar saída:', error);
       toast.error('Erro ao registrar saída');
@@ -61,10 +77,10 @@ const StockExit: React.FC = () => {
           <button
             type="button"
             className={`flex items-center p-4 rounded-lg border-2 transition-colors
-              ${model === 'ZTE 670 V1' 
+              ${formData.model === 'ZTE 670 V1' 
                 ? 'border-blue-500 bg-blue-50' 
                 : 'border-gray-200 hover:border-blue-200'}`}
-            onClick={() => setModel('ZTE 670 V1')}
+            onClick={() => setFormData({ ...formData, model: 'ZTE 670 V1' })}
           >
             <Package className="w-5 h-5 text-blue-600 mr-2" />
             <div className="text-left">
@@ -76,10 +92,10 @@ const StockExit: React.FC = () => {
           <button
             type="button"
             className={`flex items-center p-4 rounded-lg border-2 transition-colors
-              ${model === 'ZTE 670 V9' 
+              ${formData.model === 'ZTE 670 V9' 
                 ? 'border-purple-500 bg-purple-50' 
                 : 'border-gray-200 hover:border-purple-200'}`}
-            onClick={() => setModel('ZTE 670 V9')}
+            onClick={() => setFormData({ ...formData, model: 'ZTE 670 V9' })}
           >
             <Package className="w-5 h-5 text-purple-600 mr-2" />
             <div className="text-left">
@@ -99,9 +115,9 @@ const StockExit: React.FC = () => {
           type="number"
           id="quantity"
           min="1"
-          max={model === 'ZTE 670 V1' ? stock?.items?.v1?.quantity || 0 : stock?.items?.v9?.quantity || 0}
-          value={quantity}
-          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+          max={formData.model === 'ZTE 670 V1' ? stock?.items?.v1?.quantity || 0 : stock?.items?.v9?.quantity || 0}
+          value={formData.quantity}
+          onChange={(e) => setFormData({ ...formData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
       </div>
@@ -114,8 +130,8 @@ const StockExit: React.FC = () => {
         <input
           type="text"
           id="destination"
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
+          value={formData.destination}
+          onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
           placeholder="Ex: Unidade São Paulo"
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           required
@@ -130,8 +146,8 @@ const StockExit: React.FC = () => {
         <input
           type="text"
           id="responsible"
-          value={responsibleUser}
-          onChange={(e) => setResponsibleUser(e.target.value)}
+          value={formData.responsibleUser}
+          onChange={(e) => setFormData({ ...formData, responsibleUser: e.target.value })}
           placeholder="Nome do responsável"
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           required
@@ -146,8 +162,8 @@ const StockExit: React.FC = () => {
         <textarea
           id="observations"
           rows={3}
-          value={observations}
-          onChange={(e) => setObservations(e.target.value)}
+          value={formData.observations}
+          onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
           placeholder="Observações adicionais"
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
