@@ -40,7 +40,7 @@ interface Report {
 }
 
 const SavedReports: React.FC = () => {
-  const { getHistory, setReportData } = useReportData();
+  const { getHistory, setReportData, deleteReport } = useReportData();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
@@ -104,16 +104,9 @@ const SavedReports: React.FC = () => {
   const handleDelete = async (date: string) => {
     if (window.confirm('Tem certeza que deseja excluir este relatório?')) {
       try {
-        const response = await fetch(`${endpoints.reports}/${date}`, {
-          method: 'DELETE'
-        });
-
-        if (!response.ok) {
-          throw new Error('Falha ao excluir relatório');
-        }
-
-        toast.success('Relatório excluído com sucesso!');
+        await deleteReport(date);
         setReports(reports.filter(report => report.header.date !== date));
+        toast.success('Relatório excluído e estoque atualizado com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir relatório:', error);
         toast.error('Erro ao excluir relatório');
