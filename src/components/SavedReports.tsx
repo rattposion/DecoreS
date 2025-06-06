@@ -6,6 +6,9 @@ import Card from './Card';
 import ReportDisplay from './ReportDisplay';
 import toast from 'react-hot-toast';
 import { endpoints } from '../config/api';
+import { format } from 'date-fns';
+import { useReports } from '../hooks/useReports';
+import { Report } from '../../../backend/src/types/report';
 
 interface Report {
   header: {
@@ -45,6 +48,7 @@ const SavedReports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [filterDate, setFilterDate] = useState('');
+  const { reports: reportsFromUseReports, loading: loadingFromUseReports, error: errorFromUseReports } = useReports();
 
   useEffect(() => {
     loadReports();
@@ -145,6 +149,14 @@ const SavedReports: React.FC = () => {
     ? reports.filter(report => report.header.date.includes(filterDate))
     : reports;
 
+  if (errorFromUseReports) {
+    return (
+      <div className="p-4 text-red-600 bg-red-100 rounded-md">
+        {errorFromUseReports}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -174,60 +186,85 @@ const SavedReports: React.FC = () => {
           </div>
         </Card>
       ) : (
-        <div className="grid gap-6">
-          {filteredReports.map((report) => (
-            <Card key={report.header.date}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {new Date(report.header.date).toLocaleDateString()}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Supervisor: {report.header.supervisor || 'Não informado'}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Unidade: {report.header.unit || 'Não informada'}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => handleView(report)}
-                    className="flex items-center"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Visualizar
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => handleDelete(report.header.date)}
-                    className="flex items-center"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Excluir
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Total Equipamentos</p>
-                  <p className="text-xl font-semibold text-gray-900">{report.summary.totalEquipment}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Testados</p>
-                  <p className="text-xl font-semibold text-gray-900">{report.summary.testedEquipment}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Limpos</p>
-                  <p className="text-xl font-semibold text-gray-900">{report.summary.cleanedEquipment}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">V9</p>
-                  <p className="text-xl font-semibold text-gray-900">{report.summary.v9Equipment}</p>
-                </div>
-              </div>
-            </Card>
-          ))}
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">
+              Relatórios Salvos
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Data
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Supervisor
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Unidade
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Turno
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Testados
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Taxa de Aprovação
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredReports.map((report: Report) => (
+                  <tr key={report.header.date}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {format(new Date(report.header.date), 'dd/MM/yyyy')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {report.header.supervisor}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {report.header.unit}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {report.header.shift === 'morning' ? 'Manhã' : 'Tarde'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {report.dashboardData.totalTested}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {(report.dashboardData.approvalRate * 100).toFixed(1)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="secondary"
+                          onClick={() => handleView(report)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Visualizar
+                        </Button>
+                        <Button
+                          variant="danger"
+                          onClick={() => handleDelete(report.header.date)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Excluir
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
