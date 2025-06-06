@@ -13,8 +13,7 @@ export default defineConfig({
       '/api': {
         target: process.env.VITE_API_URL || 'https://web-production-ac65.up.railway.app',
         changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        secure: false
       }
     },
   },
